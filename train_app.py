@@ -246,8 +246,8 @@ def create_trainer(preprocess_fn, network_factory, read_from_file, image_shape,
             # NOTE(nwojke): tf.image.decode_jpg handles various image types.
             filename_var = tf.placeholder(tf.string, (None, ))
             image_var = tf.map_fn(
-                lambda x: tf.image.decode_jpeg(
-                    tf.read_file(x), channels=num_channels),
+                lambda x: tf.image.decode_image(
+                    tf.read_file(x), channels=num_channels, expand_animations=False),
                 filename_var, back_prop=False, fn_output_signature=tf.uint8)
             image_var = tf.image.resize_images(image_var, image_shape[:2])
             input_vars = [filename_var, label_var]
@@ -386,8 +386,8 @@ def eval_loop(preprocess_fn, network_factory, data_x, data_y, camera_indices,
             # NOTE(nwojke): tf.image.decode_jpg handles various image types.
             num_channels = image_shape[-1] if len(image_shape) == 3 else 1
             probe_x_var = tf.map_fn(
-                lambda x: tf.image.decode_jpeg(
-                    tf.read_file(x), channels=num_channels),
+                lambda x: tf.image.decode_image(
+                    tf.read_file(x), channels=num_channels, expand_animations=False),
                 probe_x_var, fn_output_signature=tf.uint8)
             probe_x_var = tf.image.resize_images(probe_x_var, image_shape[:2])
         probe_x_var = tf.map_fn(
@@ -400,8 +400,8 @@ def eval_loop(preprocess_fn, network_factory, data_x, data_y, camera_indices,
             # NOTE(nwojke): tf.image.decode_jpg handles various image types.
             num_channels = image_shape[-1] if len(image_shape) == 3 else 1
             gallery_x_var = tf.map_fn(
-                lambda x: tf.image.decode_jpeg(
-                    tf.read_file(x), channels=num_channels),
+                lambda x: tf.image.decode_image(
+                    tf.read_file(x), channels=num_channels, expand_animations=False),
                 gallery_x_var, back_prop=False, fn_output_signature=tf.uint8)
             gallery_x_var = tf.image.resize_images(
                 gallery_x_var, image_shape[:2])
@@ -576,8 +576,8 @@ def _create_encoder(preprocess_fn, network_factory, image_shape, batch_size=32,
         num_channels = image_shape[-1] if len(image_shape) == 3 else 1
         input_var = tf.placeholder(tf.string, (None, ))
         image_var = tf.map_fn(
-            lambda x: tf.image.decode_jpeg(
-                tf.read_file(x), channels=num_channels),
+            lambda x: tf.image.decode_image(
+                tf.read_file(x), channels=num_channels, expand_animations=False),
             input_var, back_prop=False, fn_output_signature=tf.uint8)
         image_var = tf.image.resize_images(image_var, image_shape[:2])
     else:
