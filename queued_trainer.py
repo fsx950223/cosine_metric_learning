@@ -4,8 +4,8 @@ import os
 import threading
 import numpy as np
 
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
 
 
 def run_in_batches(f, data_dict, out, batch_size):
@@ -390,6 +390,7 @@ class QueuedTrainer(object):
                 restore_path, variables_to_restore)
             self._init_fns.append(lambda sess: sess.run(
                 init_assign_op, init_feed_dict))
+
         self._feed_generator = ThreadSafeIterator(feed_generator)
         self._coordinator = tf.train.Coordinator()
 

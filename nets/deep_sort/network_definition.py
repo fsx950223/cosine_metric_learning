@@ -1,6 +1,6 @@
 # vim: expandtab:ts=4:sw=4
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
 
 from . import residual_net
 
@@ -81,24 +81,24 @@ def create_network(images, num_classes=None, add_logits=True, reuse=None,
     features = network
 
     # Features in rows, normalize axis 1.
-    features = tf.nn.l2_normalize(features, dim=1)
+    features = tf.nn.l2_normalize(features, axis=1)
 
     if add_logits:
-        with slim.variable_scope.variable_scope("ball", reuse=reuse):
+        with tf.variable_scope("ball", reuse=reuse):
             weights = slim.model_variable(
                 "mean_vectors", (feature_dim, int(num_classes)),
                 initializer=tf.truncated_normal_initializer(stddev=1e-3),
                 regularizer=None)
             scale = slim.model_variable(
                 "scale", (), tf.float32,
-                initializer=tf.constant_initializer(0., tf.float32),
+                initializer=tf.constant_initializer(0.),
                 regularizer=slim.l2_regularizer(1e-1))
             if create_summaries:
                 tf.summary.scalar("scale", scale)
             scale = tf.nn.softplus(scale)
 
         # Mean vectors in colums, normalize axis 0.
-        weights_normed = tf.nn.l2_normalize(weights, dim=0)
+        weights_normed = tf.nn.l2_normalize(weights, axis=0)
         logits = scale * tf.matmul(features, weights_normed)
     else:
         logits = None

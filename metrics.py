@@ -1,6 +1,6 @@
 # vim: expandtab:ts=4:sw=4
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
 
 
 def pdist(a, b=None):
@@ -46,8 +46,8 @@ def cosine_distance(a, b=None):
         between elements `a[i]` and `b[j]`.
 
     """
-    a_normed = tf.nn.l2_normalize(a, dim=1)
-    b_normed = a_normed if b is None else tf.nn.l2_normalize(b, dim=1)
+    a_normed = tf.nn.l2_normalize(a, axis=1)
+    b_normed = a_normed if b is None else tf.nn.l2_normalize(b, axis=1)
     return (
         tf.constant(1.0, tf.float32) -
         tf.matmul(a_normed, tf.transpose(b_normed)))

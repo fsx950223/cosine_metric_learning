@@ -1,5 +1,5 @@
 # vim: expandtab:ts=4:sw=4
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def _pdist(a, b=None):

@@ -1,9 +1,9 @@
 # vim: expandtab:ts=4:sw=4
 import argparse
 import numpy as np
-import tensorflow as tf
-import tensorflow.contrib.slim as slim
-
+import tensorflow.compat.v1 as tf
+import tf_slim as slim
+tf.disable_eager_execution()
 from datasets import util
 import queued_trainer
 import metrics
@@ -248,7 +248,7 @@ def create_trainer(preprocess_fn, network_factory, read_from_file, image_shape,
             image_var = tf.map_fn(
                 lambda x: tf.image.decode_jpeg(
                     tf.read_file(x), channels=num_channels),
-                filename_var, back_prop=False, dtype=tf.uint8)
+                filename_var, back_prop=False, fn_output_signature=tf.uint8)
             image_var = tf.image.resize_images(image_var, image_shape[:2])
             input_vars = [filename_var, label_var]
         else:
@@ -258,7 +258,7 @@ def create_trainer(preprocess_fn, network_factory, read_from_file, image_shape,
         enqueue_vars = [
             tf.map_fn(
                 lambda x: preprocess_fn(x, is_training=True),
-                image_var, back_prop=False, dtype=tf.float32),
+                image_var, back_prop=False, fn_output_signature=tf.float32),
             label_var]
 
     trainer = queued_trainer.QueuedTrainer(enqueue_vars, input_vars)
@@ -388,11 +388,11 @@ def eval_loop(preprocess_fn, network_factory, data_x, data_y, camera_indices,
             probe_x_var = tf.map_fn(
                 lambda x: tf.image.decode_jpeg(
                     tf.read_file(x), channels=num_channels),
-                probe_x_var, dtype=tf.uint8)
+                probe_x_var, fn_output_signature=tf.uint8)
             probe_x_var = tf.image.resize_images(probe_x_var, image_shape[:2])
         probe_x_var = tf.map_fn(
             lambda x: preprocess_fn(x, is_training=False),
-            probe_x_var, back_prop=False, dtype=tf.float32)
+            probe_x_var, back_prop=False, fn_output_signature=tf.float32)
         probe_y_var = tf.gather(data_y_var, probe_idx_var)
 
         gallery_x_var = tf.gather(data_x_var, gallery_idx_var)
@@ -402,12 +402,12 @@ def eval_loop(preprocess_fn, network_factory, data_x, data_y, camera_indices,
             gallery_x_var = tf.map_fn(
                 lambda x: tf.image.decode_jpeg(
                     tf.read_file(x), channels=num_channels),
-                gallery_x_var, dtype=tf.uint8)
+                gallery_x_var, back_prop=False, fn_output_signature=tf.uint8)
             gallery_x_var = tf.image.resize_images(
                 gallery_x_var, image_shape[:2])
         gallery_x_var = tf.map_fn(
             lambda x: preprocess_fn(x, is_training=False),
-            gallery_x_var, back_prop=False, dtype=tf.float32)
+            gallery_x_var, back_prop=False, fn_output_signature=tf.float32)
         gallery_y_var = tf.gather(data_y_var, gallery_idx_var)
 
     # Construct the network and compute features.
@@ -468,7 +468,7 @@ def finalize(preprocess_fn, network_factory, checkpoint_path, image_shape,
         input_var = tf.placeholder(tf.uint8, (None, ) + image_shape)
         image_var = tf.map_fn(
             lambda x: preprocess_fn(x, is_training=False),
-            input_var, back_prop=False, dtype=tf.float32)
+            input_var, back_prop=False, fn_output_signature=tf.float32)
         network_factory(image_var)
 
         loader = tf.train.Saver(slim.get_variables_to_restore())
@@ -511,7 +511,7 @@ def freeze(preprocess_fn, network_factory, checkpoint_path, image_shape,
             tf.uint8, (None, ) + image_shape, name=input_name)
         image_var = tf.map_fn(
             lambda x: preprocess_fn(x, is_training=False),
-            input_var, back_prop=False, dtype=tf.float32)
+            input_var, back_prop=False, fn_output_signature=tf.float32)
         features, _ = network_factory(image_var)
         features = tf.identity(features, name=feature_name)
 
@@ -578,7 +578,7 @@ def _create_encoder(preprocess_fn, network_factory, image_shape, batch_size=32,
         image_var = tf.map_fn(
             lambda x: tf.image.decode_jpeg(
                 tf.read_file(x), channels=num_channels),
-            input_var, back_prop=False, dtype=tf.uint8)
+            input_var, back_prop=False, fn_output_signature=tf.uint8)
         image_var = tf.image.resize_images(image_var, image_shape[:2])
     else:
         input_var = tf.placeholder(tf.uint8, (None, ) + image_shape)
@@ -586,7 +586,7 @@ def _create_encoder(preprocess_fn, network_factory, image_shape, batch_size=32,
 
     preprocessed_image_var = tf.map_fn(
         lambda x: preprocess_fn(x, is_training=False),
-        image_var, back_prop=False, dtype=tf.float32)
+        image_var, back_prop=False, fn_output_signature=tf.float32)
 
     feature_var, _ = network_factory(preprocessed_image_var)
     feature_dim = feature_var.get_shape().as_list()[-1]
@@ -611,8 +611,8 @@ def _create_encoder(preprocess_fn, network_factory, image_shape, batch_size=32,
 
 def _create_softmax_loss(feature_var, logit_var, label_var):
     del feature_var  # Unused variable
-    cross_entropy_var = slim.losses.sparse_softmax_cross_entropy(
-        logit_var, tf.cast(label_var, tf.int64))
+    cross_entropy_var = tf.losses.sparse_softmax_cross_entropy(
+        tf.cast(label_var, tf.int64), logit_var)
     tf.summary.scalar("cross_entropy_loss", cross_entropy_var)
 
     accuracy_var = slim.metrics.accuracy(
