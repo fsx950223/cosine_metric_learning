@@ -2,7 +2,7 @@
 import tensorflow.compat.v1 as tf
 import tf_slim as slim
 
-from . import residual_net
+from nets.deep_sort import residual_net
 
 
 def create_network(images, num_classes=None, add_logits=True, reuse=None,
